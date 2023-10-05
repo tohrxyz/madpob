@@ -1,14 +1,15 @@
 import {
     MatrixClient,
     SimpleFsStorageProvider,
-    AutojoinRoomsMixin
+    AutojoinRoomsMixin,
 } from "matrix-bot-sdk";
 import 'dotenv/config';
 
 import {
-  Client,
+  Client, ProposalQueryParams, ProposalSortBy, TokenVotingClient, TokenVotingProposalListItem,
 } from "@aragon/sdk-client";
 import { context } from "./contextStore";
+import { SortDirection, ProposalStatus } from "@aragon/sdk-client-common";
 
 const getDaoDetails = async () => {
   const aragonClient = new Client(context);
@@ -22,11 +23,33 @@ const getDaoDetails = async () => {
   return daoDetails;
 }
 
+const getNewestProposal = async () => {
+  const daoAddress = process.env.DAO_ADDRESS;
+  if (!daoAddress) throw new Error("DAO_ADDRESS must be set");
+
+  const tokenVotingClient: TokenVotingClient = new TokenVotingClient(context);
+
+  const queryParams: ProposalQueryParams = {
+    skip: 0, // optional
+    limit: 10, // optional
+    direction: SortDirection.ASC, // optional, otherwise DESC ("descending")
+    sortBy: ProposalSortBy.CREATED_AT, // optional, otherwise NAME, VOTES (POPULARITY coming soon)
+    // status: ProposalStatus.ACTIVE, // optional, otherwise PENDING, SUCCEEDED, EXECUTED, DEFEATED
+    daoAddressOrEns: daoAddress
+  };
+
+  const tokenVotingProposals: TokenVotingProposalListItem[] = await tokenVotingClient.methods.getProposals(queryParams);
+  // console.log("tokenVotingProposals: ", tokenVotingProposals)
+
+  const newestProposal = tokenVotingProposals[0];
+  return newestProposal;
+}
+
 const main = async () => {
   const daoAddress = process.env.DAO_ADDRESS;
   if (!daoAddress) throw new Error("DAO_ADDRESS must be set");
   console.log("daoAddress: ", daoAddress)
-
+  
   const homeserverUrl = process.env.HOMESERVER_URL;
   if (!homeserverUrl) throw new Error("HOMESERVER_URL must be set");
   
@@ -73,8 +96,34 @@ const main = async () => {
           if (body === "!help") {
             client.sendMessage(roomId, {
                 "msgtype": "m.notice",
-                "body": `Commands: !ping, !dao, !help`
+                "body": `Commands: !ping, !dao, !help !newestProposal`
             });
+          }
+
+          if (body === "!newestProposal") {
+            const newestProposal = await getNewestProposal();
+            
+            const title = newestProposal.metadata.title;
+            const summary = newestProposal.metadata.summary;
+            
+            const timeLeft = newestProposal.endDate.getSeconds() - Date.now() / 1000;
+            let timeLeftString = "Ended";
+            if (timeLeft > 0) {
+              const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+              const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+              const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+              timeLeftString = `${days} days ${hours} hours ${minutes} minutes ${seconds} seconds`;
+            }
+
+            const url = `https://app.aragon.org/#/daos/polygon/0xffaadc1def31595d0cc50fbca165a6f34e4402a0/governance/proposals/${newestProposal.id}`;
+
+            const markdownFormatted = `Newest proposal:\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
+
+            client.sendMessage(roomID, {
+              "msgtype": "m.text",
+              "body": markdownFormatted
+            })
           }
       }
   });
