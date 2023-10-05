@@ -11,6 +11,18 @@ import {
 import { context } from "./contextStore";
 import { SortDirection, ProposalStatus } from "@aragon/sdk-client-common";
 
+const isProposalNew = (startDate: number) => {
+  const now = Date.now() / 1000;
+
+  const diff = now - startDate;
+
+  if (diff < 600) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 const getDaoDetails = async () => {
   const aragonClient = new Client(context);
   const daoAddress = process.env.DAO_ADDRESS;
@@ -72,6 +84,34 @@ const main = async () => {
       "body": `Commands: !ping, !dao, !help`
     });
   }, 43200000);
+
+  setInterval(async () => {
+    const newestProposal = await getNewestProposal();
+    
+    const title = newestProposal.metadata.title;
+    const summary = newestProposal.metadata.summary;
+    
+    const timeLeft = newestProposal.endDate.getSeconds() - Date.now() / 1000;
+    let timeLeftString = "Ended";
+    if (timeLeft > 0) {
+      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      timeLeftString = `${days} days ${hours} hours ${minutes} minutes ${seconds} seconds`;
+    }
+
+    const url = `https://app.aragon.org/#/daos/polygon/0xffaadc1def31595d0cc50fbca165a6f34e4402a0/governance/proposals/${newestProposal.id}`;
+
+    const markdownFormatted = `Newest proposal:\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
+
+    if (isProposalNew(newestProposal.startDate.getSeconds())) {
+      client.sendMessage(roomID, {
+        "msgtype": "m.text",
+        "body": markdownFormatted
+      })  
+    }
+  }, 600000)
   
   client.on("room.message", async (roomId, event) => {
       if (event["content"]["msgtype"] === "m.text") {
