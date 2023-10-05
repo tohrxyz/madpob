@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "@aragon/sdk-client": "^1.14.0",
+    "@aragon/sdk-client-common": "^1.6.0",
     "dotenv": "^16.3.1",
     "matrix-bot-sdk": "^0.6.6",
     "ts-node": "^10.9.1"
