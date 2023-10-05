@@ -17,7 +17,11 @@ const isProposalNew = (startDate: number) => {
   const diff = now - startDate;
 
   if (diff < 600) {
-    return true;
+    if (diff < 0) {
+      return false;
+    } else {
+      return true;
+    }
   } else {
     return false;
   }
