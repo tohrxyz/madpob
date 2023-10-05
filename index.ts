@@ -48,7 +48,7 @@ const getNewestProposal = async () => {
   const queryParams: ProposalQueryParams = {
     skip: 0, // optional
     limit: 10, // optional
-    direction: SortDirection.ASC, // optional, otherwise DESC ("descending")
+    direction: SortDirection.DESC, // optional, otherwise DESC ("descending")
     sortBy: ProposalSortBy.CREATED_AT, // optional, otherwise NAME, VOTES (POPULARITY coming soon)
     // status: ProposalStatus.ACTIVE, // optional, otherwise PENDING, SUCCEEDED, EXECUTED, DEFEATED
     daoAddressOrEns: daoAddress
