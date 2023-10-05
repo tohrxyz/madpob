@@ -6,30 +6,26 @@ import {
 import 'dotenv/config';
 
 import {
-  MultisigClient,
-  MultisigProposalListItem,
-  ProposalQueryParams,
-  ProposalSortBy,
+  Client,
 } from "@aragon/sdk-client";
-import { ProposalStatus, SortDirection } from "@aragon/sdk-client-common";
 import { context } from "./contextStore";
+
+const getDaoDetails = async () => {
+  const aragonClient = new Client(context);
+  const daoAddress = process.env.DAO_ADDRESS;
+  
+  if (!daoAddress) throw new Error("DAO_ADDRESS must be set");
+
+  const daoDetails = await aragonClient.methods.getDao(daoAddress).then((dao) => {
+    return dao;
+  });
+  return daoDetails;
+}
 
 const main = async () => {
   const daoAddress = process.env.DAO_ADDRESS;
   if (!daoAddress) throw new Error("DAO_ADDRESS must be set");
   console.log("daoAddress: ", daoAddress)
-  const multisigClient = new MultisigClient(context);
-
-  const queryParams: ProposalQueryParams = {
-    direction: SortDirection.ASC, // optional. otherwise, DESC
-    sortBy: ProposalSortBy.CREATED_AT, //optional. otherwise, NAME, VOTES (POPULARITY coming soon)
-    status: ProposalStatus.ACTIVE, // optional. otherwise, PENDING, SUCCEEDED, EXECUTED, DEFEATED
-    daoAddressOrEns: daoAddress, // or my-dao.dao.eth
-  };
-
-  const multisigProposals: MultisigProposalListItem[] = await multisigClient
-  .methods.getProposals(queryParams);
-  console.log(multisigProposals);
 
   const homeserverUrl = process.env.HOMESERVER_URL;
   if (!homeserverUrl) throw new Error("HOMESERVER_URL must be set");
@@ -43,8 +39,18 @@ const main = async () => {
   AutojoinRoomsMixin.setupOnClient(client);
   
   client.start().then(() => console.log("Client started!"));
+
+  const roomID = process.env.ROOM_ID;
+  if (!roomID) throw new Error("ROOM_ID must be set");
+
+  setInterval(async () => {
+    client.sendMessage(roomID, {
+      "msgtype": "m.notice",
+      "body": `Commands: !ping, !dao, !help`
+    });
+  }, 43200000);
   
-  client.on("room.message", (roomId, event) => {
+  client.on("room.message", async (roomId, event) => {
       if (event["content"]["msgtype"] === "m.text") {
           const sender = event["sender"];
           const body = event["content"]["body"];
@@ -56,14 +62,42 @@ const main = async () => {
               });
           }
 
-          if (body === "!proposals") {
+          if (body === "!dao") {
+            const daoDetails = await getDaoDetails();
             client.sendMessage(roomId, {
                 "msgtype": "m.notice",
-                "body": `${JSON.stringify(multisigProposals)}`
+                "body": `${JSON.stringify(daoDetails, null, 2)}`
+            });
+          }
+
+          if (body === "!help") {
+            client.sendMessage(roomId, {
+                "msgtype": "m.notice",
+                "body": `Commands: !ping, !dao, !help`
             });
           }
       }
   });
+
+  // doesnt work yet for some reason
+
+  // client.on("room.join", (roomId: string, event: any) => {
+  //   console.log("Joined room: ", roomId)
+  //   const sender = event["sender"];
+  //   client.sendMessage(roomId, {
+  //       "msgtype": "m.notice",
+  //       "body": `${sender} joined the room!`
+  //   });
+  // });
+
+  // client.on("room.leave", (roomId: string, event: any) => {
+  //   console.log("Left room: ", roomId)
+  //   const sender = event["sender"];
+  //   client.sendMessage(roomId, {
+  //       "msgtype": "m.notice",
+  //       "body": `${sender} left the room!`
+  //   });
+  // });
 }
 
 main();
