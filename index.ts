@@ -92,6 +92,8 @@ const main = async () => {
   setInterval(async () => {
     const newestProposal = await getNewestProposal();
     
+    if (!newestProposal) throw new Error("No newest proposal found");
+
     const title = newestProposal.metadata.title;
     const summary = newestProposal.metadata.summary;
     
@@ -146,6 +148,8 @@ const main = async () => {
 
           if (body === "!newestProposal") {
             const newestProposal = await getNewestProposal();
+
+            if (!newestProposal) throw new Error("No newest proposal found");
             
             const title = newestProposal.metadata.title;
             const summary = newestProposal.metadata.summary;
