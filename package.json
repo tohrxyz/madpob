@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "matrix-bot-sdk": "^0.6.6",
+    "ts-node": "^10.9.1"
+  }
+}
