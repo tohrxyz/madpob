@@ -83,12 +83,12 @@ const main = async () => {
   const roomID = process.env.ROOM_ID;
   if (!roomID) throw new Error("ROOM_ID must be set");
 
-  setInterval(async () => {
-    client.sendMessage(roomID, {
-      "msgtype": "m.notice",
-      "body": `Commands: !ping, !dao, !help`
-    });
-  }, 43200000);
+  // setInterval(async () => {
+  //   client.sendMessage(roomID, {
+  //     "msgtype": "m.notice",
+  //     "body": `Commands: !ping, !dao, !help`
+  //   });
+  // }, 43200000);
 
   setInterval(async () => {
     console.log(`${Date.now()}`, "Checking for new proposals");
