@@ -21,7 +21,7 @@ const isProposalNew = (startDate: number) => {
   console.log("startDate: ", startDateSeconds)
   console.log("diff in isPropnew: ", diff);
 
-  if (diff < 2000 && diff > 0) {
+  if (diff < 600 && diff > 0) {
     return true;
   } else {
     return false;
@@ -107,14 +107,14 @@ const main = async () => {
     console.log("timeLeft: ", timeLeft);
     let timeLeftString = "Ended";
     if (timeLeft > 0) {
-      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      const days = Math.floor(timeLeft / (24 * 60 * 60));
+      const hours = Math.floor((timeLeft % (24 * 60 * 60)) / (60 * 60));
+      const minutes = Math.floor((timeLeft % (60 * 60)) / 60);
+      const seconds = Math.floor(timeLeft % 60);
       timeLeftString = `${days} days ${hours} hours ${minutes} minutes ${seconds} seconds`;
     }
 
-    const url = `https://app.aragon.org/#/daos/polygon/0xffaadc1def31595d0cc50fbca165a6f34e4402a0/governance/proposals/${newestProposal.id}`;
+    const url = `https://app.aragon.org/#/daos/polygon/${daoAddress}/governance/proposals/${newestProposal.id}`;
 
     const markdownFormatted = `New proposal was published!!!\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
 
@@ -126,7 +126,7 @@ const main = async () => {
         "body": markdownFormatted
       })  
     }
-  }, 10000)
+  }, 600000)
   
   client.on("room.message", async (roomId, event) => {
       if (event["content"]["msgtype"] === "m.text") {
@@ -158,7 +158,13 @@ const main = async () => {
           if (body === "!newestProposal") {
             const newestProposal = await getNewestProposal();
 
-            if (!newestProposal) throw new Error("No newest proposal found");
+            if (!newestProposal) {
+              client.sendMessage(roomId, {
+                "msgtype": "m.notice",
+                "body": `No newest proposal found`
+              });
+              return;
+            }
             
             const title = newestProposal.metadata.title;
             const summary = newestProposal.metadata.summary;
