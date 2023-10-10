@@ -13,15 +13,16 @@ import { SortDirection, ProposalStatus } from "@aragon/sdk-client-common";
 
 const isProposalNew = (startDate: number) => {
   const now = Date.now() / 1000;
+  const startDateSeconds = startDate / 1000;
 
-  const diff = now - startDate;
+  const diff = now - startDateSeconds;
 
-  if (diff < 600) {
-    if (diff < 0) {
-      return false;
-    } else {
-      return true;
-    }
+  console.log("now: ", now)
+  console.log("startDate: ", startDateSeconds)
+  console.log("diff in isPropnew: ", diff);
+
+  if (diff < 2000 && diff > 0) {
+    return true;
   } else {
     return false;
   }
@@ -90,14 +91,20 @@ const main = async () => {
   }, 43200000);
 
   setInterval(async () => {
+    console.log(`${Date.now()}`, "Checking for new proposals");
     const newestProposal = await getNewestProposal();
+    // console.log("newestProposal: ", newestProposal);
     
-    if (!newestProposal) throw new Error("No newest proposal found");
+    if (!newestProposal) {
+      console.log("No newest proposal found");
+      return;
+    }
 
     const title = newestProposal.metadata.title;
     const summary = newestProposal.metadata.summary;
     
-    const timeLeft = newestProposal.endDate.getSeconds() - Date.now() / 1000;
+    const timeLeft = (newestProposal.endDate.getTime() / 1000) - (Date.now() / 1000);
+    console.log("timeLeft: ", timeLeft);
     let timeLeftString = "Ended";
     if (timeLeft > 0) {
       const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
@@ -109,15 +116,17 @@ const main = async () => {
 
     const url = `https://app.aragon.org/#/daos/polygon/0xffaadc1def31595d0cc50fbca165a6f34e4402a0/governance/proposals/${newestProposal.id}`;
 
-    const markdownFormatted = `Newest proposal:\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
+    const markdownFormatted = `New proposal was published!!!\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
 
-    if (isProposalNew(newestProposal.startDate.getSeconds())) {
+    console.log("newestProposal.startDate: ", newestProposal.startDate.getTime() / 1000)
+    console.log("newestProposal.startDate.getSeconds(): ", newestProposal.startDate.getSeconds())
+    if (isProposalNew(newestProposal.startDate.getTime())) {
       client.sendMessage(roomID, {
         "msgtype": "m.text",
         "body": markdownFormatted
       })  
     }
-  }, 600000)
+  }, 10000)
   
   client.on("room.message", async (roomId, event) => {
       if (event["content"]["msgtype"] === "m.text") {
@@ -164,7 +173,7 @@ const main = async () => {
               timeLeftString = `${days} days ${hours} hours ${minutes} minutes ${seconds} seconds`;
             }
 
-            const url = `https://app.aragon.org/#/daos/polygon/0xffaadc1def31595d0cc50fbca165a6f34e4402a0/governance/proposals/${newestProposal.id}`;
+            const url = `https://app.aragon.org/#/daos/polygon/${daoAddress}/governance/proposals/${newestProposal.id}`;
 
             const markdownFormatted = `Newest proposal:\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
 
