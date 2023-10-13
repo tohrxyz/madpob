@@ -14,7 +14,6 @@ import {
   daoAddress,
   homeserverUrl,
   accessToken,
-  roomID
  } from "./envs/constants";
 
 const main = async () => {
