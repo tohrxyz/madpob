@@ -82,7 +82,7 @@ const main = async () => {
 
             const markdownFormatted = `Newest proposal:\n\nTitle: ${title}\n\nSummary: ${summary}\n\nTime left: ${timeLeftString}\n\nLink: ${url}`;
 
-            client.sendMessage(roomID, {
+            client.sendMessage(roomId, {
               "msgtype": "m.text",
               "body": markdownFormatted
             })
