@@ -20,7 +20,7 @@ $ npx ts-node index.js
 Made with love, licensed under [license](./LICENSE)
 
 **Support** by donating some crypto
-- Bitcoin Lightning **tohrxyz@bitlifi.com**
+- Bitcoin Lightning **tohrxyz@npub.cash**
 - Monero **49261YsGmYjeEAipPeRC5g2KR8imwedAYX4i3Gy9hYvN7JUBB4Vyc5U7aDbsnUF43S7tjLptrYmdt32P4yytvo9s6p51dgc**
 
 **Feel free to contribute**
